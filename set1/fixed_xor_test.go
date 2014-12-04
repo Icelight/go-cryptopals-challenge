@@ -44,7 +44,6 @@ var testCases = []testPairs {
     },
 }
 
-
 func TestFixedXor(t *testing.T) {
 
     for _, testcase := range testCases {

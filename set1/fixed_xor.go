@@ -21,8 +21,6 @@ func xorOverArray(input1 []byte, input2 []byte) []byte {
     return outputBytes
 }
 
-
-
 func FixedXor(input1, input2 string) (string, error) {
     if len(input1) != len(input2) {
         return "", errors.New("Length of input strings were not the same")
