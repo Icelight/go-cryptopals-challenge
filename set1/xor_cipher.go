@@ -62,14 +62,14 @@ func FindBestPlaintext(hexString string) (string, float32, byte) {
             bestChar = char
         }
 
-        fmt.Println("Char:", string(char), "\n\t\tScore:", score)
-        fmt.Printf("Plaintext: %q\n\n", plaintext)
+        //fmt.Println("Char:", string(char), "\n\t\tScore:", score)
+        //fmt.Printf("Plaintext: %q\n\n", plaintext)
     }
 
     return bestPlaintext, bestScore, bestChar
 }
 
-
+/*
 func main() {
     hexString := "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736"
 
@@ -77,3 +77,4 @@ func main() {
 
     fmt.Println("Best plaintext is:", plaintext, ", with score:", bestScore, "using char:", string(char))
 }
+*/
