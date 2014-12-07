@@ -1,5 +1,5 @@
 package main
-
+/*
 import (
     "fmt"
     "encoding/hex"
@@ -47,4 +47,4 @@ func main() {
     if err != nil {
         panic(err)
     }
-}
+} */

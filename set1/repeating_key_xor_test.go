@@ -1,5 +1,5 @@
 package main
-
+/*
 import(
     "encoding/hex"
     "bytes"
@@ -51,4 +51,4 @@ func TestRepeatingKeyXor(t *testing.T) {
         }
     }
 
-}
+} */
