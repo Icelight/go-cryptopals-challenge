@@ -1,28 +1,12 @@
 package main
-/*
+
 import (
     "fmt"
     "encoding/hex"
     "flag"
     "io/ioutil"
-    "errors"
+    "github.com/Icelight/go-cryptopals-challenge/cryptolib"
 )
-
-func RepeatingKeyXor(plainBytes, keyBytes []byte) ([]byte, error) {
-
-    if len(keyBytes) <= 0 {
-        err := errors.New("Key must have a length of at least one")
-        return nil, err
-    }
-    
-    cipherBytes := make([]byte, len(plainBytes))
-
-    for i, char := range plainBytes {
-        cipherBytes[i] = char ^ keyBytes[i % len(keyBytes)]
-    }
-
-    return cipherBytes, nil
-}
 
 func main() {
 
@@ -38,7 +22,7 @@ func main() {
     }
 
     //We're reading from a file, and writing back, so skip the EOF character
-    cipherBytes, err := RepeatingKeyXor(plainBytes[:len(plainBytes)-1], []byte(*keyPtr))
+    cipherBytes, err := cryptolib.RepeatingKeyXor(plainBytes[:len(plainBytes)-1], []byte(*keyPtr))
 
     fmt.Println(hex.EncodeToString(cipherBytes))
 
@@ -47,4 +31,4 @@ func main() {
     if err != nil {
         panic(err)
     }
-} */
+} 

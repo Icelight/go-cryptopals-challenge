@@ -1,6 +1,7 @@
 package main
 
 import (
+    "fmt"
     "errors"
     "encoding/hex"
 )
@@ -42,4 +43,15 @@ func FixedXor(input1, input2 string) (string, error) {
     outputString := hex.EncodeToString(xorBytes)
 
     return outputString, nil
+}
+
+func main() {
+    input1 := "1c0111001f010100061a024b53535009181c"
+    input2 := "686974207468652062756c6c277320657965"
+
+    output, err := FixedXor(input1, input2)
+
+    if err != nil { panic(err) }
+
+    fmt.Println(output)
 }

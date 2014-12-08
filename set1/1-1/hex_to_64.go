@@ -33,3 +33,13 @@ func HexTo64String(hexString string) (string, error) {
 
     return base64String, nil
 }
+
+func main() {
+    input := "49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d"
+
+    output, err := HexTo64String(input)
+
+    if err != nil { panic(err) }
+
+    fmt.Println(output)
+}

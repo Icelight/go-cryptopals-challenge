@@ -16,6 +16,22 @@ func XorAgainstChar(bytes []byte, char byte) []byte {
     return xored
 }
 
+func RepeatingKeyXor(plainBytes, keyBytes []byte) ([]byte, error) {
+
+    if len(keyBytes) <= 0 {
+        err := errors.New("Key must have a length of at least one")
+        return nil, err
+    }
+    
+    cipherBytes := make([]byte, len(plainBytes))
+
+    for i, char := range plainBytes {
+        cipherBytes[i] = char ^ keyBytes[i % len(keyBytes)]
+    }
+
+    return cipherBytes, nil
+}
+
 var scoreMap = map[string]float32 {
     "a": 5, "b": 1.5, "c": 2.8, "d": 4.3, "e": 12.7, "f": 2.2, "g": 2, "h": 6.1, "i": 7.0, "j": 0.2, "k": 0.8, "l": 4, "m": 2.4,
     "n": 6.7, "o": 7.5, "p": 1.9, "q": 0.1, "r": 6, "s": 6.3, "t": 9.1, "u": 2.8, "v": 1, "w": 2.4, "x": 0.2, "y": 2, "z": 0.1, 

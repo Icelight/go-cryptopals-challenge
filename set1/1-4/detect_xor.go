@@ -5,13 +5,13 @@ import (
     "fmt"
     "flag"    
     "bufio"
+    "encoding/hex"
+    "github.com/Icelight/go-cryptopals-challenge/cryptolib"
 )
-
-
 
 func main() {
 
-    filenamePtr := flag.String("filename", "1-4.txt", "Filename of crypto file")
+    filenamePtr := flag.String("filename", "../files/1-4.txt", "Filename of crypto file")
     flag.Parse()
 
     file, err := os.Open(*filenamePtr)
@@ -27,8 +27,12 @@ func main() {
     bestPlaintext := ""
 
     for scanner.Scan() {
-        plaintext, _, _ := FindBestPlaintext(scanner.Text())
-        score := ScorePlaintext(plaintext)
+        hexBytes, err := hex.DecodeString(scanner.Text())
+
+        if err != nil { panic(err) }
+
+        plaintext, _, _ := cryptolib.FindBestPlaintext(hexBytes)
+        score := cryptolib.ScorePlaintext([]byte(plaintext))
 
         if score > bestScore {
             bestScore = score
