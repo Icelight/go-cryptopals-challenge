@@ -6,31 +6,8 @@ import (
     "errors"
     "flag"
     "fmt"
+    "github.com/Icelight/go-cryptopals-challenge/cryptolib"
 )
-
-func CalculateHammingDistance(first []byte, second []byte) (int, error) {
-
-    if len(first) != len(second) {
-        err := errors.New("Input byte arrays must be of the same length")
-        return -1, err
-    }
-
-    distance := 0
-    xor := make([]byte, len(first))
-
-    for i, _ := range first {
-        xor[i] = first[i] ^ second[i]
-    }
-
-    for _, val := range xor {
-        for val > 0 {
-            distance++
-            val &= val - 1
-        }
-    }
-
-    return distance, nil
-}
 
 func getKeysizeBlocks(input []byte, offset, keysize int) ([]byte, []byte) {
 
@@ -60,12 +37,13 @@ func FindBestKeysize(input []byte, minsize, maxsize int) (int, error) {
         for offset := 0; offset + i + i < len(input); offset += i {
 
             firstBlock, secondBlock := getKeysizeBlocks(input, offset, i)
-            dist, err := CalculateHammingDistance(firstBlock, secondBlock)
-            dist /= i //Normalize computed distance to keysize
+            dist, err := cryptolib.CalculateHammingDistance(firstBlock, secondBlock)
 
             if err != nil { panic (err) }
 
-            avgDist += float32(dist)
+            fltDist := float32(dist) / float32(i) //Normalize computed distance to keysize
+
+            avgDist += float32(fltDist)
             numIters++
         }
 
@@ -76,10 +54,48 @@ func FindBestKeysize(input []byte, minsize, maxsize int) (int, error) {
             bestKeysize = i
         }
 
-        fmt.Println("Num iters for keysize of", i, "was: ~~", numIters, "~~", "\n\tDistance is:", bestDist)
+        fmt.Println("Num iters for keysize of", i, "was: ~~", numIters, "~~", "\n\tDistance is:", avgDist)
     }
 
     return bestKeysize, nil
+}
+
+func transposeBlocks(blocks []byte, keysize int) [][]byte {
+
+    keyBlocks := make([][]byte, keysize)
+
+    for i, _ := range keyBlocks {
+
+        keyBlocks[i] = make([]byte, len(blocks) / keysize)
+
+        for j := 0; j < len(keyBlocks[i]); j++ {
+            keyBlocks[i][j] = blocks[i + (keysize * j)]
+        }
+    }
+
+    return keyBlocks
+}
+
+func expandKey(key []byte, length int) []byte {
+
+    expandedKey := make([]byte, length)
+
+    for i := range expandedKey {
+        expandedKey[i] = key[i % len(key)]
+    }
+
+    return expandedKey
+}
+
+func generatePlaintext(rawBytes, key []byte) []byte {
+
+    plaintext := make([]byte, len(rawBytes))
+
+    for i, _ := range plaintext {
+        plaintext[i] = rawBytes[i] ^ key[i]
+    }
+
+    return plaintext
 }
 
 
@@ -104,4 +120,23 @@ func main() {
     if err != nil { panic(err) }
 
     fmt.Println("Best keysize found was:", bestKeysize)
+
+    //Now let's reformat our blocks such that the first block contains the first byte of every keysize
+    //length block in the original, the second block contains the second byte of every keysize length block
+    //in the original, etc.
+    keyBlocks := transposeBlocks(rawBytes, bestKeysize)
+
+    //For each element i in the key, solve for keyBlocks[i]
+    key := make([]byte, bestKeysize)
+
+    for i, block := range keyBlocks {
+        _, _, keyChar := cryptolib.FindBestPlaintext(block)
+
+        key[i] = keyChar
+    }
+
+    plaintext := generatePlaintext(rawBytes, expandKey(key, len(rawBytes)))
+
+    fmt.Println(string(plaintext))
+    
 }
