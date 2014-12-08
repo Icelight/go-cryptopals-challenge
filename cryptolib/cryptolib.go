@@ -3,7 +3,31 @@ package cryptolib
 import (
     "strings"
     "errors"
+    "crypto/aes"
 )
+
+func DecryptECB(ciphertext, key []byte) ([]byte, error) {
+    blockCipher, err := aes.NewCipher(key)
+
+    if err != nil {
+        return nil, err
+    }
+
+    blockSize := blockCipher.BlockSize()
+
+    if len(ciphertext) % blockSize != 0 {
+        err := errors.New("Ciphertext must be a multiple of the blocksize")
+        return nil, err
+    }
+
+    plaintext := make([]byte, len(ciphertext))
+
+    for i := 0; i < len(plaintext); i += blockSize {
+        blockCipher.Decrypt(plaintext[i:i+blockSize], ciphertext[i:i+blockSize])
+    }
+
+    return plaintext, nil
+}
 
 func XorAgainstChar(bytes []byte, char byte) []byte {
 
