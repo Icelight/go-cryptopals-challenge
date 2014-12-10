@@ -6,6 +6,43 @@ import (
     "encoding/hex"
 )
 
+type pkcs7TestPairs struct {
+    input string
+    paddedLength int
+    expected string
+}
+
+var pkcs7TestCases = []pkcs7TestPairs {
+    {
+        input: "",
+        paddedLength: 5,
+        expected: "\x04\x04\x04\x04\x04",
+    },
+    {
+        input: "YELLOW SUBMARINE",
+        paddedLength: 20,
+        expected: "YELLOW SUBMARINE\x04\x04\x04\x04",
+    },
+    {
+        input: "This is a string a lot longer than the padding that we want",
+        paddedLength: 10,
+        expected: "This is a string a lot longer than the padding that we want",
+    },
+}
+
+func TestPkcs7Padding (t *testing.T) {
+
+    for _, testcase := range pkcs7TestCases {
+        rawBytes := []byte(testcase.input)
+        actual := Pkcs7Padding(rawBytes, testcase.paddedLength)
+
+        if !bytes.Equal(actual, []byte(testcase.expected)) {
+            t.Error("Expected:", []byte(testcase.expected), "but got:", actual)
+        }
+    }
+
+}
+
 type hammingDistanceTestPairs struct {
     first string
     second string

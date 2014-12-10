@@ -6,6 +6,22 @@ import (
     "crypto/aes"
 )
 
+func Pkcs7Padding(block []byte, desiredLength int) []byte {
+
+    if len(block) >= desiredLength {
+        return block
+    }
+
+    newBlock := make([]byte, desiredLength)
+    copy(newBlock, block)
+
+    for i := len(block); i < desiredLength; i++ {
+        newBlock[i] = '\x04'
+    }
+
+    return newBlock
+}
+
 func DecryptECB(ciphertext, key []byte) ([]byte, error) {
     blockCipher, err := aes.NewCipher(key)
 
