@@ -22,16 +22,42 @@ func Pkcs7Padding(block []byte, desiredLength int) []byte {
     return newBlock
 }
 
-func DecryptECB(ciphertext, key []byte) ([]byte, error) {
+func EncryptECB(plaintext, key []byte) ([]byte, error) {
     blockCipher, err := aes.NewCipher(key)
 
-    if err != nil {
-        return nil, err
-    }
+    if err != nil { return nil, err }
 
     blockSize := blockCipher.BlockSize()
 
-    if len(ciphertext) % blockSize != 0 {
+    var paddedPlaintext []byte
+
+    //If our plaintext is not a multiple of the blocksize then let's pad it!
+    if len(plaintext) % blockSize != 0 { 
+        extraNeeded := len(plaintext) % blockSize
+        extraNeeded = 16 - extraNeeded
+
+        paddedPlaintext = Pkcs7Padding(plaintext, len(plaintext) + extraNeeded)
+    } else {
+        paddedPlaintext = plaintext
+    }
+
+    ciphertext := make([]byte, len(paddedPlaintext))
+
+    for i := 0; i < len(paddedPlaintext); i+= blockSize {
+        blockCipher.Encrypt(ciphertext[i:i+blockSize], paddedPlaintext[i:i+blockSize])
+    }
+
+    return ciphertext, nil
+}
+
+func DecryptECB(ciphertext, key []byte) ([]byte, error) {
+    blockCipher, err := aes.NewCipher(key)
+
+    if err != nil { return nil, err }
+
+    blockSize := blockCipher.BlockSize()
+
+    if len(ciphertext) % blockSize != 0 { 
         err := errors.New("Ciphertext must be a multiple of the blocksize")
         return nil, err
     }
