@@ -6,6 +6,140 @@ import (
     "encoding/hex"
 )
 
+func TestCBCEncryptDecrypt (t *testing.T) {
+
+    type cbcTestPairs struct {
+        input string
+        expected string
+        key string
+        iv string
+        errorExpected bool
+    }
+
+    var cbcTestCases = []cbcTestPairs {
+        {
+            input: "YELLOW SUBMARINE",
+            key: "YELLOW SUBMARINE",
+            iv: "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
+            expected: "YELLOW SUBMARINE",
+            errorExpected: false,
+        },
+        {
+            input: "too short",
+            expected: "too short\x04\x04\x04\x04\x04\x04\x04",
+            iv: "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
+            key: "this key is way too long",
+            errorExpected: false,
+        },
+        {
+            input: "long plaintext that is a multiple of the key ok.",
+            expected: "long plaintext that is a multiple of the key ok.",
+            iv: "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
+            key: "this is my key k",
+            errorExpected: false,
+        },
+        {
+            input: "Doesn't matter because our key size is too small!",
+            expected: "",
+            iv: "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
+            key: "tiny!",
+            errorExpected: true,
+        },
+    }
+
+    for _, testcase := range cbcTestCases {
+        //Attempt to encrypt and then decrypt the input. We'd better have the same text spat back out!
+        ciphertext, err := EncryptCBC([]byte(testcase.input), []byte(testcase.iv), []byte(testcase.key))
+
+        if !testcase.errorExpected && err != nil {
+            t.Error("Unexpected error encountered with plaintext", testcase.input, "and key", testcase.key, "error:", err.Error())
+        } else if testcase.errorExpected && err == nil {
+            t.Error("Expected an error but did not receive one with plaintext", testcase.input, "and key", testcase.key)
+        }
+
+        actual := []byte("")
+
+        if err == nil {
+            var decryptErr error
+            actual, decryptErr = DecryptCBC(ciphertext, []byte(testcase.iv), []byte(testcase.key))
+
+            if decryptErr != nil {
+                t.Error("Unexpected error encountered with plaintext", testcase.input, "and key", testcase.key, "error:", decryptErr.Error())
+            }
+        }
+
+        if !bytes.Equal(actual, []byte(testcase.expected)) {
+            t.Error("Expected:", []byte(testcase.expected), "but got:", actual, "(input: ", testcase.input, ")")
+        }
+
+    }
+}
+
+func TestGetAESBlocks (t *testing.T) {
+
+    type getAESBlocksTestPairs struct {
+        input string
+        blockSize int
+        canPad bool
+        expected []string
+        errorExpected bool
+    }
+
+    var getAESBlockTestCases = []getAESBlocksTestPairs {
+        {
+            input: "1234567890123456",
+            blockSize: 16,
+            canPad: true,
+            expected: []string{ "1234567890123456" },
+            errorExpected: false,
+        },
+        {
+            input: "1234567890",
+            blockSize: 16,
+            canPad: true,
+            expected: []string{ "1234567890\x04\x04\x04\x04\x04\x04" },
+            errorExpected: false,
+        },
+        {
+            input: "1234567890",
+            blockSize: 16,
+            canPad: false,
+            expected: nil,
+            errorExpected: true,
+        },
+        {
+            input: "",
+            blockSize: 16,
+            canPad: true,
+            expected: []string{ "\x04\x04\x04\x04\x04\x04\x04\x04\x04\x04\x04\x04\x04\x04\x04\x04" },
+            errorExpected: false,
+        },
+        {
+            input: "1234567890",
+            blockSize: 2,
+            canPad: true,
+            expected: []string{ "12", "34", "56", "78", "90" },
+            errorExpected: false,
+        },
+    }
+
+    for _, testcase := range getAESBlockTestCases {
+        actual, err := GetAESBlocks([]byte(testcase.input), testcase.blockSize, testcase.canPad)
+
+        if !testcase.errorExpected && err != nil {
+            t.Error("Unexpected error encountered with input", testcase.input, "and blocksize", testcase.blockSize, "error:", err.Error())
+        } else if testcase.errorExpected && err == nil {
+            t.Error("Expected an error but did not receive one with input", testcase.input, "and blocksize", testcase.blockSize)
+        }
+
+        for i, _ := range actual {
+            if !bytes.Equal(actual[i], []byte(testcase.expected[i])) {
+                t.Error("Expected:", []byte(testcase.expected[i]), "but got:", actual[i])
+            }
+        }
+    }
+}
+
 func TestECBEncryptDecrypt (t *testing.T) {
 
     type ecbTestPairs struct {

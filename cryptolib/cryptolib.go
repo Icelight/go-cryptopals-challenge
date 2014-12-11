@@ -6,6 +6,93 @@ import (
     "crypto/aes"
 )
 
+//We will pad the entire data if canPad is true.
+func GetAESBlocks(data []byte, blockSize int, canPad bool) ([][]byte, error) {
+    var paddedData []byte
+
+    if len(data) % blockSize != 0 {
+        if canPad {
+            extraNeeded := len(data) % blockSize
+            extraNeeded = blockSize - extraNeeded
+
+            paddedData = Pkcs7Padding(data, len(data) + extraNeeded)
+        } else {
+            err := errors.New("Data length was not a multiple of the blocksize and can not be padded")
+            return nil, err
+        }
+    } else {
+        paddedData = data
+    }
+
+    numBlocks := len(paddedData) / blockSize
+    blocks := make([][]byte, numBlocks)
+
+    for i, block := 0, 0; i < len(paddedData); i += blockSize {
+        blocks[block] = paddedData[i:i + blockSize]
+        block++
+    }
+
+    return blocks, nil
+}
+
+func EncryptCBC(plaintext, iv, key []byte) ([]byte, error) {
+
+    //Build up all of our blocks ahead of time.
+    blocks, err := GetAESBlocks(plaintext, 16, true)
+
+    if err != nil { return nil, err }
+
+    prevBlock := iv
+    var ciphertext []byte
+
+    //For each block:
+    // xor it with the previous block
+    // Encrypt the result
+    for _, block := range blocks {
+        xorBlock, err := RepeatingKeyXor(prevBlock, block)
+
+        if err != nil { return nil, err }
+
+        cipherBlock, err := EncryptECB(xorBlock, key)
+
+        if err != nil { return nil, err }
+
+        ciphertext = append(ciphertext, cipherBlock...)
+        prevBlock = cipherBlock
+    }
+
+    return ciphertext, nil 
+}
+
+func DecryptCBC(ciphertext, iv, key []byte) ([]byte, error) {
+
+    //Build up all of our blocks ahead of time.
+    blocks, err := GetAESBlocks(ciphertext, 16, false)
+
+    if err != nil { return nil, err }
+
+    prevBlock := iv
+    var plaintext []byte
+
+    //For each block:
+    // Decrypt the block
+    // xor it with the previous block
+    for _, block := range blocks {
+        cipherBlock, err := DecryptECB(block, key)
+
+        if err != nil { return nil, err }
+
+        plainBlock, err := RepeatingKeyXor(prevBlock, cipherBlock)
+
+        if err != nil { return nil, err }
+
+        plaintext = append(plaintext, plainBlock...)
+        prevBlock = block
+    }
+
+    return plaintext, nil
+}
+
 func Pkcs7Padding(block []byte, desiredLength int) []byte {
 
     if len(block) >= desiredLength {
@@ -34,7 +121,7 @@ func EncryptECB(plaintext, key []byte) ([]byte, error) {
     //If our plaintext is not a multiple of the blocksize then let's pad it!
     if len(plaintext) % blockSize != 0 { 
         extraNeeded := len(plaintext) % blockSize
-        extraNeeded = 16 - extraNeeded
+        extraNeeded = blockSize - extraNeeded
 
         paddedPlaintext = Pkcs7Padding(plaintext, len(plaintext) + extraNeeded)
     } else {
