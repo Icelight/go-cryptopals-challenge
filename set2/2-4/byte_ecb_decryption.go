@@ -3,6 +3,7 @@ package main
 import (
     "fmt"
     "flag"
+    "bytes"
     "io/ioutil"
     "crypto/rand"
     "encoding/base64"
@@ -65,7 +66,7 @@ func IsECB(blockSize int) bool {
 
     //Build up three blocks worth of repeating character known plaintext
     for i, _ := range known {
-        known[i] = byte('A')
+        known[i] = 'A'
     }
 
     ciphertext := EncryptionOracle(known)
@@ -76,11 +77,60 @@ func IsECB(blockSize int) bool {
     return isEcb
 }
 
+func ByteAtATimeDecrypt(blockSize int) []byte {
+
+    //First let's determine how many unknown blocks we have and the total length of the secret
+    ciphertext := EncryptionOracle([]byte(""))
+    secretLength := len(ciphertext)
+    numBlocks := secretLength / blockSize
+
+    knownChars := make([]byte, 0)
+
+    //For each block in the secret text, determine what each byte must be
+    for currBlock := 1; currBlock <= numBlocks; currBlock++ { //Starting from 1 so we can ignore our known block which is at the front
+
+        //Iterate over each byte in the current block and figure out what that byte is.
+        for currByte := 0; currByte < blockSize; currByte++ {
+
+            //Build up our known block for this round and get the round ciphertext containing shortBlock || secret
+            //Essentially, our control will contain:
+            //  [SHORT][KNOWN][c][Actual Ciphertext we don't care about]
+            //And our round:
+            //  [SHORT][Actual Ciphertext that we already know (same length as KNOWN!)][?]
+            //Thus we can always check against [?] with [c] 
+            shortBlock := make([]byte, (currBlock * blockSize) - len(knownChars) - 1)
+            for i, _ := range shortBlock {
+                shortBlock[i] = 'A'
+            }
+
+            roundCiphertext := EncryptionOracle(shortBlock)[0:currBlock*blockSize]
+
+            //Now build up a ciphertext with a known control value until we find one matching our round ciphertext
+            //Starting at char 10 to cover newlines
+            for character := byte(10); character < 127; character++ {
+                control := make([]byte, 0)
+                control = append(control, shortBlock...)
+                control = append(control, knownChars...)
+                control = append(control, character)
+
+                controlCiphertext := EncryptionOracle(control)[0:currBlock*blockSize]
+
+                if bytes.Equal(roundCiphertext, controlCiphertext) {
+                    knownChars = append(knownChars, character)
+                    break;
+                }
+            }
+        }
+    }
+
+    return knownChars
+}
+
 func main() {
-    unknownFilePtr := flag.String("extra", "../files/2-4.dat", "Filename of file containing an unknown base64'd string")
+    infilePtr := flag.String("in", "../files/2-4.dat", "Filename of file containing a base64'd string for use by enc. oracle")
     flag.Parse()
 
-    base64Bytes, err := ioutil.ReadFile(*unknownFilePtr)
+    base64Bytes, err := ioutil.ReadFile(*infilePtr)
     if err != nil { panic(err) }
 
     rawBytes = make([]byte, base64.StdEncoding.DecodedLen(len(base64Bytes)))
@@ -100,4 +150,8 @@ func main() {
         return
     }
 
+    plaintext := ByteAtATimeDecrypt(blockSize)
+
+    fmt.Println("Plaintext is:\n")
+    fmt.Println(string(plaintext))
 }
