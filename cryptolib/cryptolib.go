@@ -6,6 +6,39 @@ import (
     "crypto/aes"
 )
 
+func IsECB(ciphertext []byte, blocksize int) (bool, error) {
+
+    isEcb := false
+
+    if blocksize > len(ciphertext) || len(ciphertext) % blocksize != 0 {
+        err := errors.New("Blocksize must be ≤ ciphertext length and ciphertext length must be a multiple of blocksize")
+        return isEcb, err
+    }
+
+    blockMap := make(map[string]int)
+    totalDupes := 0
+
+    for i := 0; i < len(ciphertext); i += blocksize {
+
+        block := ciphertext[i:i+blocksize]
+
+        _, ok := blockMap[string(block)]
+
+        if ok {
+            totalDupes++
+        } else {
+            blockMap[string(block)] = 1
+        }
+
+    }
+
+    if totalDupes > 0 {
+        isEcb = true
+    } 
+
+    return isEcb, nil
+}
+
 //We will pad the entire data if canPad is true.
 func GetAESBlocks(data []byte, blockSize int, canPad bool) ([][]byte, error) {
     var paddedData []byte

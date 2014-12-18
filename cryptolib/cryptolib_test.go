@@ -4,7 +4,75 @@ import (
     "bytes"
     "testing"
     "encoding/hex"
+    "crypto/rand"
 )
+
+func TestIsECB(t *testing.T) {
+
+    type isEcbTestPairs struct {
+        input string
+        blocksize int
+        shouldDetectEcb bool
+        errorExpected bool
+    }
+
+    var isEcbTestCases = []isEcbTestPairs {
+        {
+            input: "",
+            blocksize: 16,
+            shouldDetectEcb: false,
+            errorExpected: true,
+        },
+        {
+            input: "",
+            blocksize: 128,
+            shouldDetectEcb: false,
+            errorExpected: true,
+        },
+        {
+            input: "1234567890123456",
+            blocksize: 16,
+            shouldDetectEcb: false,
+            errorExpected: false,
+        },
+        {
+            input: "12345678901234561234567890123456",
+            blocksize: 16,
+            shouldDetectEcb: true,
+            errorExpected: false,
+        },
+        {
+            input: "1234567890123456hereanotherblock1234567890123456",
+            blocksize: 16,
+            shouldDetectEcb: true,
+            errorExpected: false,
+        },
+    }
+
+    for _, testcase := range isEcbTestCases {
+        //Randomly generate a valid key
+        key := make([]byte, 16)
+        _, _ = rand.Read(key)
+
+        ciphertext, _ := EncryptECB([]byte(testcase.input), key)
+
+        //Now check if it's ECB!
+        isEcb, err := IsECB(ciphertext, testcase.blocksize)
+
+        if !testcase.errorExpected && err != nil {
+            t.Error("Unexpected error encountered with plaintext", testcase.input, "error:", err.Error())
+        } else if testcase.errorExpected && err == nil {
+            t.Error("Expected an error but did not receive one with plaintext", testcase.input)
+        }
+
+        if testcase.shouldDetectEcb && !isEcb {
+            t.Error("Should have detected ecb for testcase:", testcase.input, "but did not")
+        } else if !testcase.shouldDetectEcb && isEcb {
+            t.Error("Incorrectly identified testcase:", testcase.input, "as ecb")
+        }
+    }
+
+}
 
 func TestCBCEncryptDecrypt (t *testing.T) {
 
