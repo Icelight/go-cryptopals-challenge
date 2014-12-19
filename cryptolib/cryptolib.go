@@ -136,7 +136,7 @@ func Pkcs7Padding(block []byte, desiredLength int) []byte {
     copy(newBlock, block)
 
     for i := len(block); i < desiredLength; i++ {
-        newBlock[i] = '\x04'
+        newBlock[i] = byte(desiredLength - len(block))
     }
 
     return newBlock

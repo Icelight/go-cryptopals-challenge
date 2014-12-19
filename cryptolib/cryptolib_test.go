@@ -94,7 +94,7 @@ func TestCBCEncryptDecrypt (t *testing.T) {
         },
         {
             input: "too short",
-            expected: "too short\x04\x04\x04\x04\x04\x04\x04",
+            expected: "too short\x07\x07\x07\x07\x07\x07\x07",
             iv: "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
             key: "this key is way too long",
             errorExpected: false,
@@ -165,7 +165,7 @@ func TestGetAESBlocks (t *testing.T) {
             input: "1234567890",
             blockSize: 16,
             canPad: true,
-            expected: []string{ "1234567890\x04\x04\x04\x04\x04\x04" },
+            expected: []string{ "1234567890\x06\x06\x06\x06\x06\x06" },
             errorExpected: false,
         },
         {
@@ -179,7 +179,7 @@ func TestGetAESBlocks (t *testing.T) {
             input: "",
             blockSize: 16,
             canPad: true,
-            expected: []string{ "\x04\x04\x04\x04\x04\x04\x04\x04\x04\x04\x04\x04\x04\x04\x04\x04" },
+            expected: []string{ "\x16\x16\x16\x16\x16\x16\x16\x16\x16\x16\x16\x16\x16\x16\x16\x16" },
             errorExpected: false,
         },
         {
@@ -226,7 +226,7 @@ func TestECBEncryptDecrypt (t *testing.T) {
         },
         {
             input: "too short",
-            expected: "too short\x04\x04\x04\x04\x04\x04\x04",
+            expected: "too short\x07\x07\x07\x07\x07\x07\x07",
             key: "this key is way too long",
             errorExpected: false,
         },
@@ -280,7 +280,7 @@ func TestPkcs7Padding (t *testing.T) {
         {
             input: "",
             paddedLength: 5,
-            expected: "\x04\x04\x04\x04\x04",
+            expected: "\x05\x05\x05\x05\x05",
         },
         {
             input: "YELLOW SUBMARINE",
