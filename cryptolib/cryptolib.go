@@ -45,10 +45,7 @@ func GetAESBlocks(data []byte, blockSize int, canPad bool) ([][]byte, error) {
 
     if len(data) % blockSize != 0 {
         if canPad {
-            extraNeeded := len(data) % blockSize
-            extraNeeded = blockSize - extraNeeded
-
-            paddedData = Pkcs7Padding(data, len(data) + extraNeeded)
+            paddedData = Pkcs7Padding(data)
         } else {
             err := errors.New("Data length was not a multiple of the blocksize and can not be padded")
             return nil, err
@@ -70,8 +67,10 @@ func GetAESBlocks(data []byte, blockSize int, canPad bool) ([][]byte, error) {
 
 func EncryptCBC(plaintext, iv, key []byte) ([]byte, error) {
 
+    paddedPlaintext := Pkcs7Padding(plaintext)
+
     //Build up all of our blocks ahead of time.
-    blocks, err := GetAESBlocks(plaintext, 16, true)
+    blocks, err := GetAESBlocks(paddedPlaintext, 16, true)
 
     if err != nil { return nil, err }
 
@@ -86,7 +85,7 @@ func EncryptCBC(plaintext, iv, key []byte) ([]byte, error) {
 
         if err != nil { return nil, err }
 
-        cipherBlock, err := EncryptECB(xorBlock, key)
+        cipherBlock, err := EncryptECB(xorBlock, key, false)
 
         if err != nil { return nil, err }
 
@@ -126,39 +125,39 @@ func DecryptCBC(ciphertext, iv, key []byte) ([]byte, error) {
     return plaintext, nil
 }
 
-func Pkcs7Padding(block []byte, desiredLength int) []byte {
+func ValidatePkcs7Padding(plaintext []byte) bool {
+    for i := len(plaintext); i >= 0; i-- {
 
-    if len(block) >= desiredLength {
-        return block
     }
 
-    newBlock := make([]byte, desiredLength)
-    copy(newBlock, block)
+    return false;
+} 
 
-    for i := len(block); i < desiredLength; i++ {
-        newBlock[i] = byte(desiredLength - len(block))
+func Pkcs7Padding(text []byte) []byte {
+
+    paddingLength := 16 - (len(text) % 16);
+
+    paddedText := make([]byte, len(text) + paddingLength)
+    copy(paddedText, text)
+
+    for i := len(text); i < len(paddedText); i++ {
+        paddedText[i] = byte(paddingLength)
     }
 
-    return newBlock
+    return paddedText
 }
 
-func EncryptECB(plaintext, key []byte) ([]byte, error) {
+func EncryptECB(plaintext, key []byte, shouldPad bool) ([]byte, error) {
     blockCipher, err := aes.NewCipher(key)
 
     if err != nil { return nil, err }
 
     blockSize := blockCipher.BlockSize()
 
-    var paddedPlaintext []byte
+    paddedPlaintext := plaintext;
 
-    //If our plaintext is not a multiple of the blocksize then let's pad it!
-    if len(plaintext) % blockSize != 0 { 
-        extraNeeded := len(plaintext) % blockSize
-        extraNeeded = blockSize - extraNeeded
-
-        paddedPlaintext = Pkcs7Padding(plaintext, len(plaintext) + extraNeeded)
-    } else {
-        paddedPlaintext = plaintext
+    if (shouldPad || len(plaintext) % 16 != 0) {
+        paddedPlaintext = Pkcs7Padding(plaintext)
     }
 
     ciphertext := make([]byte, len(paddedPlaintext))

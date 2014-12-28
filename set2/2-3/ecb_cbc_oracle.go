@@ -78,7 +78,7 @@ func EncryptionOracle(plaintext []byte) ([]byte, string) {
 
         if err != nil { panic(err) }
     } else { //EBC
-        ciphertext, err = cryptolib.EncryptECB(paddedPlaintext, key)
+        ciphertext, err = cryptolib.EncryptECB(paddedPlaintext, key, true)
         algUsed = "ecb"
 
         if err != nil { panic(err) }

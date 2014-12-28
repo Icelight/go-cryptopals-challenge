@@ -24,7 +24,7 @@ func EncryptionOracle(plaintext []byte) []byte {
     fulltext = append(fulltext, plaintext...)
     fulltext = append(fulltext, rawBytes...)
 
-    ciphertext, err := cryptolib.EncryptECB(fulltext, key)
+    ciphertext, err := cryptolib.EncryptECB(fulltext, key, true)
     
     return ciphertext
 }

@@ -55,7 +55,7 @@ func GenerateAESKey() ([]byte, error) {
 func EncryptUserProfile(profile string) []byte {
     key, _ := GenerateAESKey()
 
-    ciphertext, _ := cryptolib.EncryptECB([]byte(profile), key)
+    ciphertext, _ := cryptolib.EncryptECB([]byte(profile), key, true)
 
     return ciphertext
 }

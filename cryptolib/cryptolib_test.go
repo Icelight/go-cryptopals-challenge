@@ -7,6 +7,53 @@ import (
     "crypto/rand"
 )
 
+func TestValidatePkcs7Padding(t *testing.T) {
+
+    type validatePkcs7PaddingPairs struct {
+        input string
+        expected bool
+    }
+
+    var validatePkcs7PaddingTestCases = []validatePkcs7PaddingPairs {
+        {
+            input: "",
+            expected: false,
+        },
+        {
+            input: "a",
+            expected: false,
+        },
+        {
+            input: "\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10",
+            expected: true,
+        },
+        {
+            input: "12345678\x08\x08\x08\x08\x08\x08\x08\x08",
+            expected: true,
+        },
+        {
+            input: "12345678\x07\x07\x07\x07\x07\x07\x07",
+            expected: false,
+        },
+        {
+            input: "123456\x07\x07\x07\x07\x07\x07\x07\x07\x07\x07",
+            expected: false,
+        },
+        {
+            input: "123456\x0A\x0A\x0A\x0A\x0A\x0A\x0A\x0A\x0A\x0A",
+            expected: true,
+        },
+    }
+
+    for _, testcase := range validatePkcs7PaddingTestCases {
+        actual := ValidatePkcs7Padding([]byte(testcase.input))
+
+        if actual != testcase.expected {
+            t.Error("Expected", testcase.expected, "but got", actual, "for testcase:", []byte(testcase.input))
+        }
+    }
+}
+
 func TestIsECB(t *testing.T) {
 
     type isEcbTestPairs struct {
@@ -21,13 +68,7 @@ func TestIsECB(t *testing.T) {
             input: "",
             blocksize: 16,
             shouldDetectEcb: false,
-            errorExpected: true,
-        },
-        {
-            input: "",
-            blocksize: 128,
-            shouldDetectEcb: false,
-            errorExpected: true,
+            errorExpected: false,
         },
         {
             input: "1234567890123456",
@@ -54,7 +95,7 @@ func TestIsECB(t *testing.T) {
         key := make([]byte, 16)
         _, _ = rand.Read(key)
 
-        ciphertext, _ := EncryptECB([]byte(testcase.input), key)
+        ciphertext, _ := EncryptECB([]byte(testcase.input), key, true)
 
         //Now check if it's ECB!
         isEcb, err := IsECB(ciphertext, testcase.blocksize)
@@ -89,7 +130,7 @@ func TestCBCEncryptDecrypt (t *testing.T) {
             input: "YELLOW SUBMARINE",
             key: "YELLOW SUBMARINE",
             iv: "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
-            expected: "YELLOW SUBMARINE",
+            expected: "YELLOW SUBMARINE\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10",
             errorExpected: false,
         },
         {
@@ -101,7 +142,7 @@ func TestCBCEncryptDecrypt (t *testing.T) {
         },
         {
             input: "long plaintext that is a multiple of the key ok.",
-            expected: "long plaintext that is a multiple of the key ok.",
+            expected: "long plaintext that is a multiple of the key ok.\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10",
             iv: "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
             key: "this is my key k",
             errorExpected: false,
@@ -221,7 +262,7 @@ func TestECBEncryptDecrypt (t *testing.T) {
         {
             input: "YELLOW SUBMARINE",
             key: "YELLOW SUBMARINE",
-            expected: "YELLOW SUBMARINE",
+            expected: "YELLOW SUBMARINE\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10",
             errorExpected: false,
         },
         {
@@ -232,7 +273,7 @@ func TestECBEncryptDecrypt (t *testing.T) {
         },
         {
             input: "long plaintext that is a multiple of the key ok.",
-            expected: "long plaintext that is a multiple of the key ok.",
+            expected: "long plaintext that is a multiple of the key ok.\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10",
             key: "this is my key k",
             errorExpected: false,
         },
@@ -246,7 +287,7 @@ func TestECBEncryptDecrypt (t *testing.T) {
 
     for _, testcase := range ecbTestCases {
         //Attempt to encrypt and then decrypt the input. We'd better have the same text spat back out!
-        ciphertext, err := EncryptECB([]byte(testcase.input), []byte(testcase.key))
+        ciphertext, err := EncryptECB([]byte(testcase.input), []byte(testcase.key), true)
 
         if !testcase.errorExpected && err != nil {
             t.Error("Unexpected error encountered with plaintext", testcase.input, "and key", testcase.key, "error:", err.Error())
@@ -279,24 +320,21 @@ func TestPkcs7Padding (t *testing.T) {
     var pkcs7TestCases = []pkcs7TestPairs {
         {
             input: "",
-            paddedLength: 5,
-            expected: "\x05\x05\x05\x05\x05",
+            expected: "\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10",
         },
         {
             input: "YELLOW SUBMARINE",
-            paddedLength: 20,
-            expected: "YELLOW SUBMARINE\x04\x04\x04\x04",
+            expected: "YELLOW SUBMARINE\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10",
         },
         {
-            input: "This is a string a lot longer than the padding that we want",
-            paddedLength: 10,
-            expected: "This is a string a lot longer than the padding that we want",
+            input: "This is a string longer than a single block",
+            expected: "This is a string longer than a single block\x05\x05\x05\x05\x05",
         },
     }
 
     for _, testcase := range pkcs7TestCases {
         rawBytes := []byte(testcase.input)
-        actual := Pkcs7Padding(rawBytes, testcase.paddedLength)
+        actual := Pkcs7Padding(rawBytes)
 
         if !bytes.Equal(actual, []byte(testcase.expected)) {
             t.Error("Expected:", []byte(testcase.expected), "but got:", actual)
