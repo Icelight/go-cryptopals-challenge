@@ -125,12 +125,33 @@ func DecryptCBC(ciphertext, iv, key []byte) ([]byte, error) {
     return plaintext, nil
 }
 
-func ValidatePkcs7Padding(plaintext []byte) bool {
-    for i := len(plaintext); i >= 0; i-- {
+func RemovePkcs7Padding(plaintext []byte) ([]byte, error) {
+    validPadding := ValidatePkcs7Padding(plaintext)
 
+    if !validPadding {
+        return nil, errors.New("Padding was not valid")
     }
 
-    return false;
+    paddingLen := plaintext[len(plaintext) - 1]
+    trimmedPlaintext := make([]byte, len(plaintext) - int(paddingLen))
+    copy(trimmedPlaintext, plaintext)
+
+    return trimmedPlaintext, nil
+}
+
+func ValidatePkcs7Padding(plaintext []byte) bool {
+
+    if (len(plaintext) < 16) { return false}
+
+    paddingNum := plaintext[len(plaintext) - 1]
+
+    if paddingNum < 0 || paddingNum > 16 { return false }
+
+    for i := 1; i <= int(paddingNum); i++ {
+        if plaintext[len(plaintext) - i] != paddingNum { return false }
+    }
+
+    return true;
 } 
 
 func Pkcs7Padding(text []byte) []byte {

@@ -7,6 +7,63 @@ import (
     "crypto/rand"
 )
 
+func TestRemovePkcs7Padding(t *testing.T) {
+
+    type removePkcs7PaddingPairs struct {
+        input string
+        expected string
+        errorExpected bool
+    }
+
+    var removePkcs7PaddingTestCases = []removePkcs7PaddingPairs {
+        {
+            input: "",
+            expected: "",
+            errorExpected: true,
+        },
+        {
+            input: "a",
+            expected: "",
+            errorExpected: true,
+        },
+        {
+            input: "a\x0F\x0F\x0F\x0F\x0F\x0F\x0F\x0F\x0F\x0F\x0F\x0F\x0F\x0F\x0F",
+            expected: "a",
+            errorExpected: false,
+        },
+        {
+            input: "123456789012345\x02",
+            expected: "",
+            errorExpected: true,
+        },
+        {
+            input: "1234567890\x01\x02\x03\x04\x05\x06",
+            expected: "",
+            errorExpected: true,
+        },
+        {
+            input: "1234567890\x06\x06\x06\x06\x06\x06",
+            expected: "1234567890",
+            errorExpected: false,
+        },
+    }
+
+    for _, testcase := range removePkcs7PaddingTestCases {
+
+        actual, err := RemovePkcs7Padding([]byte(testcase.input))
+
+        if !testcase.errorExpected && err != nil {
+            t.Error("Unexpected error encountered with test case:", []byte(testcase.input), "error:", err.Error())
+        } else if testcase.errorExpected && err == nil {
+            t.Error("Expected an error but did not receive one with test case:", []byte(testcase.input))
+        }
+
+        if string(actual) != testcase.expected {
+            t.Error("Expected:", []byte(testcase.expected), "but got:", actual)
+        }
+    }
+}
+
 func TestValidatePkcs7Padding(t *testing.T) {
 
     type validatePkcs7PaddingPairs struct {
@@ -36,7 +93,7 @@ func TestValidatePkcs7Padding(t *testing.T) {
             expected: false,
         },
         {
-            input: "123456\x07\x07\x07\x07\x07\x07\x07\x07\x07\x07",
+            input: "123456\x07\x07\x07\x07\x07\x07\x07\x06\x07\x07",
             expected: false,
         },
         {
