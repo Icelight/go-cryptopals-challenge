@@ -46,6 +46,16 @@ func TestRemovePkcs7Padding(t *testing.T) {
             expected: "1234567890",
             errorExpected: false,
         },
+        {
+            input: "1234567890123456",
+            expected: "",
+            errorExpected: true,
+        },
+        {
+            input: "1234567890123456\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10",
+            expected: "1234567890123456",
+            errorExpected: false,
+        },
     }
 
     for _, testcase := range removePkcs7PaddingTestCases {
@@ -98,6 +108,14 @@ func TestValidatePkcs7Padding(t *testing.T) {
         },
         {
             input: "123456\x0A\x0A\x0A\x0A\x0A\x0A\x0A\x0A\x0A\x0A",
+            expected: true,
+        },
+        {
+            input: "1234567890123456",
+            expected: false,
+        },
+        {
+            input: "1234567890123456\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10",
             expected: true,
         },
     }
