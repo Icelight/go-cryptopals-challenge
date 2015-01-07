@@ -145,7 +145,7 @@ func ValidatePkcs7Padding(plaintext []byte) bool {
 
     paddingNum := plaintext[len(plaintext) - 1]
 
-    if paddingNum < 0 || paddingNum > 16 { return false }
+    if paddingNum <= 0 || paddingNum > 16 { return false }
 
     for i := 1; i <= int(paddingNum); i++ {
         if plaintext[len(plaintext) - i] != paddingNum { return false }

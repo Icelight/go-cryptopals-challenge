@@ -118,6 +118,18 @@ func TestValidatePkcs7Padding(t *testing.T) {
             input: "1234567890123456\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10",
             expected: true,
         },
+        {
+            input: "123456789012345\x00",
+            expected: false,
+        },
+        {
+            input: "1234567890\x00\x00\x00\x00\x00\x00",
+            expected: false,
+        },
+        {
+            input: "1234567890123456\x00",
+            expected: false,
+        },
     }
 
     for _, testcase := range validatePkcs7PaddingTestCases {
