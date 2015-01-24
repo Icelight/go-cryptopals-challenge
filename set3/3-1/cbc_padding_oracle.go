@@ -46,7 +46,7 @@ func ServerDecryptCheckStub(ciphertext []byte, iv []byte) bool {
 
     if err != nil { return false }
 
-    validPadding := cryptolib.ValidatePkcs7Padding(plaintext)
+    validPadding := cryptolib.ValidatePkcs7Padding(plaintext)    
 
     return validPadding
 
@@ -60,8 +60,6 @@ func CBCPaddingOracleAttack(ciphertext []byte, blocksize int) ([]byte, error) {
     //Break each block, starting with the last...
     for currBlock := numBlocks - 1; currBlock >= 0; currBlock-- {
 
-        currBlockText := ciphertext[currBlock * blocksize:(currBlock + 1) * blocksize]
-
         var prevBlock []byte
 
         if currBlock == 0 {
@@ -73,11 +71,13 @@ func CBCPaddingOracleAttack(ciphertext []byte, blocksize int) ([]byte, error) {
         //Break each byte in the block, starting with the last...
         for currByte := blocksize - 1; currByte >= 0; currByte-- {
 
+            currCipherBlock := ciphertext[currBlock * blocksize:(currBlock + 1) * blocksize]
+
             //Looking for padding 0x01 for the last byte, 0x02 for the second last, etc.
             padValue := byte(blocksize - currByte)
 
-            attackBlock := make([]byte, len(currBlockText))
-            copy(attackBlock, currBlockText)
+            attackBlock := make([]byte, len(currCipherBlock))
+            copy(attackBlock, prevBlock) //Attackblock has to be the previous block since it acts as the IV!
 
             //Now copy into our attack block the bytes we've already determined from
             //our previous iterations in this block such that they will turn into
@@ -93,10 +93,10 @@ func CBCPaddingOracleAttack(ciphertext []byte, blocksize int) ([]byte, error) {
             for testByte := 0; testByte < 256; testByte++ {
                 attackBlock[currByte] = byte(testByte)
 
-                correct = ServerDecryptCheckStub(currBlockText, attackBlock)
+                correct = ServerDecryptCheckStub(currCipherBlock, attackBlock)
 
                 if correct {
-                    fmt.Println(attackBlock)
+                    //fmt.Println(attackBlock)
                     break
                 }
             }
@@ -128,7 +128,7 @@ func main() {
         fmt.Println(err.Error())
     }
 
-    fmt.Println(plaintext)
-    fmt.Println(decryptedPlaintext)
+    fmt.Println("Original input plaintext was: " + plaintext)
+    fmt.Println("Decrypted plaintext is: " + string(decryptedPlaintext))
     
 }
