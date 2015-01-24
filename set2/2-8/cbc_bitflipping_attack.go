@@ -75,7 +75,7 @@ func CreateAdminProfileAttack() []byte {
     ciphertext := PadAndEncryptProfile(attackString)
 
     //Our user data starts at the third block. Let's corrupt the first character of that block as well as
-    //6 characters later, both of which correspond to entries in our admin string as well.
+    //6 characters later, both of which correspond to the same block-bytes composing our admin string.
     ciphertext[32] ^= '_' ^ ';'
     ciphertext[38] ^= '_' ^ '='
 
