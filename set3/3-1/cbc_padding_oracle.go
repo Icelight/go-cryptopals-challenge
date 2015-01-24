@@ -5,7 +5,6 @@ import (
     "strconv"
     "errors"
     "crypto/rand"
-    mrand "math/rand"
     "github.com/Icelight/go-cryptopals-challenge/cryptolib"
 )
 
@@ -90,11 +89,10 @@ func CBCPaddingOracleAttack(ciphertext []byte, blocksize int) ([]byte, error) {
 
             //Aha, figured out the issue why this would fail occassionally!
             //If our plaintext required padding, we could get unlucky and, while trying to create a block with
-            //valid padding, accidentally stumble into the actual padding values in the real plaintext before we're
-            //ready for that. This causes us to screw up the rest of our padding tests. So, let's fill the remainder
-            //of the attack block with random garbage to hopefully avoid that.
+            //valid padding, accidentally stumbling into a false positive which will screw us up as soon as we
+            //work with the next byte in the block. So fill the bytes we don't care about with a bunch of 0's.
             for i := 0; i <= currByte; i++ {
-                attackBlock[i] = byte(mrand.Intn(256))
+                attackBlock[i] = byte(0)
             }
 
             correct := false
